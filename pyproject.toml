@@ -7,7 +7,7 @@ name = "grafiki-bridge"
 version = "0.1.0"
 description = "Send data from Jupyter notebooks to the grafiki web dashboard."
 readme = "README.md"
-authors = [{ name="leberkaassemmel", email="" }]
+authors = [{ name="leberkaassemmel", email="leber.kaas.semel@gmail.com" }]
 license = { text = "MIT" }
 requires-python = ">=3.7"
 dependencies = [
@@ -17,3 +17,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/leberkaassemmel/grafiki-bridge"
+
+[tool.setuptools]
+packages = ["grafiki"]  # only include this package
+

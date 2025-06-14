@@ -1,6 +1,5 @@
 import pandas as pd
-from grafiki_bridge.core import bridge_df
-import re
+from grafiki.core import bridge_df
 
 def test_bridge_df_generates_valid_url():
     # Sample DataFrame
