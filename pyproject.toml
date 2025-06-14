@@ -19,5 +19,4 @@ dependencies = [
 Homepage = "https://github.com/leberkaassemmel/grafiki-bridge"
 
 [tool.setuptools]
-packages = ["grafiki"]  # only include this package
-
+packages = ["grafiki"]
