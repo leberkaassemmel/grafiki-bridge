@@ -125,3 +125,7 @@ pip install -e ".[dev]"
 ## License
 
 This project is open source and available under the MIT License.
+
+## Disclaimer
+
+Parts of this project and documentation were created with the assistance of AI tools to accelerate development and improve code quality.
