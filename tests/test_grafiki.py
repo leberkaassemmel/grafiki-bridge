@@ -192,8 +192,8 @@ class TestGrafikiBridge:
 
     def test_check_url_compatibility_long_url(self, bridge_instance):
         """Test URL compatibility check with very long URL."""
-        # Create a URL longer than safari limit (80000)
-        long_url = "https://example.com/" + "x" * 90000
+        # Create a URL longer than safari limit (5000000)
+        long_url = "https://example.com/" + "x" * 10000000
 
         compatibility = bridge_instance._check_url_compatibility(long_url)
 
@@ -381,7 +381,7 @@ class TestEdgeCases:
     def test_very_large_dataframe_handling(self):
         """Test handling of very large DataFrames that might exceed URL limits."""
         # Create a DataFrame that will definitely exceed URL limits
-        large_data = {f"col_{i}": list(range(10000)) for i in range(100)}
+        large_data = {f"col_{i}": list(range(20000)) for i in range(100)}
         large_df = pd.DataFrame(large_data)
 
         bridge = GrafikiBridge()
@@ -395,8 +395,8 @@ class TestEdgeCases:
         compatibility = bridge._check_url_compatibility(url)
         assert compatibility["has_compatibility_issues"]
         assert (
-            len(compatibility["compatible_browsers"]) == 0
-        )  # Too large for all browsers
+            len(compatibility["compatible_browsers"]) == 2
+        )  # Too large for almost all browsers
 
     def test_empty_string_parameters(self):
         """Test handling of empty string parameters."""
@@ -496,8 +496,10 @@ class TestPerformance:
         """Test compression performance with moderately large data."""
         import time
 
+        bridge = GrafikiBridge()
+
         start_time = time.time()
-        compressed = GrafikiBridge.compress_dataframe(sample_data)
+        compressed = bridge.compress_dataframe(sample_data)
         end_time = time.time()
 
         # Should complete in reasonable time (< 5 seconds for 1000 rows)
@@ -509,11 +511,12 @@ class TestPerformance:
         import time
 
         start_time = time.time()
+        bridge = GrafikiBridge()
 
         # Perform multiple compressions
         for i in range(10):
             subset = sample_data.iloc[:100]  # Use smaller subsets
-            GrafikiBridge.compress_dataframe(subset, name=f"test_{i}")
+            bridge.compress_dataframe(subset, name=f"test_{i}")
 
         end_time = time.time()
 

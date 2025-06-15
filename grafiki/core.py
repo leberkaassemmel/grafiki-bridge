@@ -3,9 +3,12 @@ import gzip
 import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 import pandas as pd
 from IPython.display import HTML, display
+
+from grafiki.types import Dataset, Template
 
 
 class GrafikiBridge:
@@ -22,11 +25,12 @@ class GrafikiBridge:
 
     # Browser URL length limits (bytes)
     BROWSER_LIMITS = {
-        "chrome": 2048000,
-        "firefox": 65536,
-        "safari": 80000,
-        "edge": 2048000,
-        "default": 65536,
+        "chrome": 40000000,  # Modern Chrome tested up to 40M
+        "firefox": 1000000,  # Firefox supports at least 1M
+        "safari": 5000000,  # Tested as stable
+        "edge": 40000000,  # Chromium-based Edge matches Chrome
+        "ie": 2000,  # IE11 fails beyond 2025 chars
+        "default": 65536,  # Generic conservative fallback
     }
 
     def __init__(self, base_url: str = "https://www.grafiki.app"):
@@ -38,9 +42,13 @@ class GrafikiBridge:
         """
         self.base_url = base_url.rstrip("/")
 
-    @staticmethod
     def compress_dataframe(
-        df: pd.DataFrame, name: Optional[str] = None, tags: Optional[List[str]] = None
+        self,
+        df: pd.DataFrame,
+        name: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        uuid: Optional[UUID] = None,
+        template: Optional[Template] = None,
     ) -> str:
         """Compress a pandas DataFrame to base64 encoded gzip format.
 
@@ -50,25 +58,70 @@ class GrafikiBridge:
                 timestamp-based name. Defaults to None.
             tags (Optional[List[str]], optional): List of tags to associate with the dataset.
                 Defaults to None.
+            uuid (Optional[UUID]): Optional UUID to associate with the data.
+            template (Optional[Template]): Optional supply a template.
 
         Returns:
             str: Base64 encoded gzip compressed string representation of the DataFrame.
         """
-        dataset = {
-            "data": df.to_dict("records"),
-            "name": name or f"Dataset_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-            "tags": tags or [],
-        }
+        dataset = self._build_dataset(df, name, tags, uuid)
+        template = self._build_template(template)
 
-        json_str = json.dumps({"dataset": dataset}, default=str)
+        json_str = json.dumps({"dataset": dataset, "template": template}, default=str)
         compressed_data = gzip.compress(json_str.encode("utf-8"))
         return base64.b64encode(compressed_data).decode("utf-8")
+
+    @staticmethod
+    def _build_dataset(
+        df: pd.DataFrame,
+        name: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        uuid: Optional[UUID] = None,
+    ) -> Dataset:
+        """Build the dataset.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to compress.
+            name (Optional[str], optional): Name for the dataset. If None, generates a
+                timestamp-based name. Defaults to None.
+            tags (Optional[List[str]], optional): List of tags to associate with the dataset.
+                Defaults to None.
+            uuid (Optional[UUID]): Optional UUID to associate with the data.
+
+        Returns:
+            Dataset: The assembled dataset.
+        """
+        dataset: Dataset = {
+            "data": df.to_dict("records"),
+            "name": name or f"Dataset_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            "tags": tags if tags is not None else [],
+        }
+        if uuid is not None:
+            dataset["uuid"] = str(uuid)
+
+        return dataset
+
+    @staticmethod
+    def _build_template(template: Optional[Template] = None) -> Template:
+        """Build the template.
+
+        Args:
+            template (Optional[Template]): Optional supply a template.
+
+        Returns:
+            Template: The assembled template.
+        """
+        if template is None:
+            return {"name": "New template", "items": []}
+        return template
 
     def create_webapp_link(
         self,
         df: pd.DataFrame,
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        uuid: Optional[UUID] = None,
+        template: Optional[Template] = None,
     ) -> str:
         """Create a web app link with compressed DataFrame data.
 
@@ -78,11 +131,13 @@ class GrafikiBridge:
                 timestamp-based name. Defaults to None.
             tags (Optional[List[str]], optional): List of tags to associate with the dataset.
                 Defaults to None.
+            uuid (Optional[UUID]): Optional UUID to associate with the data.
+            template (Optional[Template]): Optional supply a template.
 
         Returns:
             str: Complete URL for the web application with compressed data as fragment.
         """
-        compressed_data = self.compress_dataframe(df, name, tags)
+        compressed_data = self.compress_dataframe(df, name, tags, uuid, template)
         return f"{self.base_url}/d#{compressed_data}"
 
     def _get_compression_stats(self, df: pd.DataFrame) -> Dict[str, Any]:
@@ -96,7 +151,13 @@ class GrafikiBridge:
                 - compression_ratio (float): Ratio of original to compressed size
                 - space_saved_percent (float): Percentage of space saved through compression
         """
-        original_json = json.dumps(df.to_dict("records"), default=str)
+        dataset = self._build_dataset(df)
+        template = self._build_template()
+
+        original_json = json.dumps(
+            {"dataset": dataset, "template": template}, default=str
+        )
+
         original_size = len(original_json.encode("utf-8"))
         compressed_size = len(self.compress_dataframe(df).encode("utf-8"))
 
@@ -144,6 +205,8 @@ class GrafikiBridge:
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
         link_text: str = "Open Dataset",
+        uuid: Optional[UUID] = None,
+        template: Optional[Template] = None,
     ) -> None:
         """Display an interactive dataset link with comprehensive statistics and browser compatibility info.
 
@@ -158,12 +221,14 @@ class GrafikiBridge:
                 Defaults to None.
             link_text (str, optional): Text to display on the link button.
                 Defaults to "Open Dataset".
+            uuid (Optional[UUID]): Optional UUID to associate with the data.
+            template (Optional[Template]): Optional supply a template.
 
         Returns:
             None: Displays HTML content directly in the Jupyter notebook.
         """
 
-        url = self.create_webapp_link(df, name, tags)
+        url = self.create_webapp_link(df, name, tags, uuid, template)
         dataset_name = name or f"Dataset_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         # Get statistics
@@ -294,6 +359,8 @@ def bridge_df(
     name: Optional[str] = None,
     tags: Optional[List[str]] = None,
     base_url: str = "https://www.grafiki.app",
+    uuid: Optional[UUID] = None,
+    template: Optional[Template] = None,
 ) -> str:
     """Convenience function to compress a DataFrame and return the webapp link.
 
@@ -308,6 +375,8 @@ def bridge_df(
             Defaults to None.
         base_url (str, optional): The base URL of the web application.
             Defaults to "https://www.grafiki.app".
+        uuid (Optional[UUID]): Optional UUID to associate with the data.
+        template (Optional[Template]): Optional supply a template.
 
     Returns:
         str: Complete URL for the web application with compressed DataFrame data.
@@ -320,7 +389,7 @@ def bridge_df(
         https://www.grafiki.app/d#eJy...
     """
     bridge = GrafikiBridge(base_url)
-    return bridge.create_webapp_link(df, name, tags)
+    return bridge.create_webapp_link(df, name, tags, uuid, template)
 
 
 def show_bridge_link(
@@ -329,6 +398,8 @@ def show_bridge_link(
     tags: Optional[List[str]] = None,
     base_url: str = "https://www.grafiki.app",
     link_text: str = "Open in Web App",
+    uuid: Optional[UUID] = None,
+    template: Optional[Template] = None,
 ) -> None:
     """Convenience function to display a clickable link for a DataFrame with statistics.
 
@@ -346,6 +417,8 @@ def show_bridge_link(
             Defaults to "https://www.grafiki.app".
         link_text (str, optional): Text to display on the link button.
             Defaults to "Open in Web App".
+        uuid (Optional[UUID]): Optional UUID to associate with the data.
+        template (Optional[Template]): Optional supply a template.
 
     Returns:
         None: Displays HTML content directly in the Jupyter notebook.
@@ -357,4 +430,6 @@ def show_bridge_link(
         # Displays an interactive widget with dataset information and link
     """
     bridge = GrafikiBridge(base_url)
-    bridge.display_link(df, name, tags, link_text=link_text)
+    bridge.display_link(
+        df, name, tags, link_text=link_text, uuid=uuid, template=template
+    )
