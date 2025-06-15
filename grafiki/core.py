@@ -22,11 +22,12 @@ class GrafikiBridge:
 
     # Browser URL length limits (bytes)
     BROWSER_LIMITS = {
-        "chrome": 2048000,
-        "firefox": 65536,
-        "safari": 80000,
-        "edge": 2048000,
-        "default": 65536,
+        "chrome": 40000000,  # Modern Chrome tested up to 40M
+        "firefox": 1000000,  # Firefox supports at least 1M
+        "safari": 5000000,  # Tested as stable
+        "edge": 40000000,  # Chromium-based Edge matches Chrome
+        "ie": 2000,  # IE11 fails beyond 2025 chars
+        "default": 65536,  # Generic conservative fallback
     }
 
     def __init__(self, base_url: str = "https://www.grafiki.app"):

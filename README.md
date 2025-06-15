@@ -71,6 +71,10 @@ link = bridge_df(df,
                 base_url="https://custom.grafiki.app")
 ```
 
+### Colab Example
+
+Check out the colab notebook: [grafiki Tutorial](https://colab.research.google.com/drive/1XJ5QJIEf1iOL4xG58ZAs3lbTaCh1w5SR?usp=sharing)
+
 ### What You Get
 
 When you run `show_bridge_link()`, you'll see:
