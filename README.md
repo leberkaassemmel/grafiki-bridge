@@ -4,7 +4,7 @@ A Python package that creates shareable, interactive data visualizations from pa
 
 ## Overview
 
-This package allows you to convert pandas DataFrames into compressed, browser-compatible links that open in the Grafiki web application for interactive data exploration and visualization.
+This package allows you to convert pandas DataFrames into compressed, browser-compatible links that open in the [grafiki](https://www.grafiki.app) web application for interactive data exploration and visualization. For more information, please visit our [wiki](https://www.docs.grafiki.app).
 
 ## Features
 
@@ -25,12 +25,14 @@ pip install grafiki-bridge
 Or install the latest development version:
 
 ```bash
-pip install git+https://github.com/yourusername/grafiki-bridge.git
+pip install git+https://github.com/leberkaassemmel/grafiki-bridge.git
 ```
 
 ## Usage
 
-### Basic Example
+### Basic Examples
+
+To share a DataFrame in a jupyter notebook, use the `show_bridge_link` function:
 
 ```python
 import pandas as pd
@@ -49,6 +51,26 @@ df = pd.DataFrame(sample_data)
 grafiki.show_bridge_link(df, 'My First Dataset')
 ```
 
+For quick DataFrame sharing, use the `bridge_df` function:
+
+```python
+import pandas as pd
+from grafiki import bridge_df
+
+# Load your data
+df = pd.read_csv('your_data.csv')
+
+# Quick link generation
+link = bridge_df(df, name="Sales Data Q1", tags=["sales", "quarterly"])
+print(f"Share your data: {link}")
+
+# With custom base URL
+link = bridge_df(df, 
+                name="Custom Dataset",
+                tags=["analysis", "2024"],
+                base_url="https://custom.grafiki.app")
+```
+
 ### What You Get
 
 When you run `show_bridge_link()`, you'll see:
@@ -60,7 +82,6 @@ When you run `show_bridge_link()`, you'll see:
 
 ## Key Benefits
 
-- **Compressed Data**: Automatically compresses your data (up to 1.5x compression in this example)
 - **Browser Optimized**: Checks URL length limits for different browsers
 - **Instant Sharing**: No need to upload files - data is encoded in the URL
 - **Privacy Friendly**: Data stays in your control through URL encoding
@@ -73,11 +94,10 @@ The tool automatically detects your browser and shows compatibility:
 - **Firefox**: Up to ~64KB of data  
 - **Safari**: Up to ~80KB of data
 
-## Requirements
+## Requirements (automatically installed with the package)
 
 - Python 3.6+
-- pandas
-- Dependencies are automatically installed with the package
+- pandas 
 
 ## Getting Started
 
@@ -126,6 +146,12 @@ pip install -e ".[dev]"
 
 This project is open source and available under the MIT License.
 
-## Disclaimer
+## AI Assistance Disclosure
 
-Parts of this project and documentation were created with the assistance of AI tools to accelerate development and improve code quality.
+This project uses AI tools to assist with development, including:
+- Code generation and optimization
+- Documentation writing
+- Test case generation
+- Code review assistance
+
+All AI-generated content is reviewed and validated by human maintainers before inclusion.
